@@ -14,7 +14,7 @@
 #
 master <- function(subdirectory = "") {
     raw_data_set <- read_and_merge_raw_data(subdirectory)
-    raw_data_set$data <- apply_labels(data_set$data, data_set$labels)
+    raw_data_set$data <- apply_labels(raw_data_set$data, raw_data_set$labels)
     raw_data_set$data <- mix_in_subjects_and_activities(data_set$data, data_set$activity_ref)
     
     final_data_set <- average(raw_data_set$data)
@@ -56,11 +56,12 @@ read_and_merge_raw_data <- function(subdirectory = "") {
     files <- list.files(path)
 
     for (file in files) {
-        print("Processing %s", file)
+        print(sprintf("Processing %s", file))
+        
         if (file.info(file)$isdir) {
             print(sprintf("Reading data type '%s'", file))
             new_raw <- read_raw(file)
-            print(sprintf("Merging '%s%' data into all raw", file))
+            print(sprintf("Merging '%s' data into all raw", file))
             raw <- list(raw, file = new_raw)
         }
     }
@@ -175,7 +176,7 @@ merge_raw <- function(raw_data) {
     inertial_signals <- NULL
     
     for (data in raw_data) {
-        print(sprintf("   - merging in data type '%s'", data))
+        print("   - merging in data")
         readings <- rbind(data$readings)
         subjects <- rbind(data$subjects)
         activities <- rbind(data$activities)
@@ -195,6 +196,7 @@ merge_raw <- function(raw_data) {
 # return: Same data frame, with labels in $readings set
 #
 apply_labels <- function(data, labels) {
+    print("   - applying labels")
     readings <- data$readings
     
     replace_col_name_flag = substr(names(readings), 1, 1) == "V"
@@ -213,7 +215,9 @@ apply_labels <- function(data, labels) {
 # return: Same data set, but with subjects and activities merged into readings
 #
 mix_in_subjects_and_activities <- function(data, activity_ref) {
-    subjects <- as.data.frame(data$subjects)
+    print("   - mixing in subjects, activities")
+    
+    subjects <- data$subjects
     colnames(subjects) <- c("subject")
     
     activities <- data$activities
@@ -232,6 +236,8 @@ mix_in_subjects_and_activities <- function(data, activity_ref) {
 # return: New data frame with only columns of mean and standard deviation data
 #
 extract_mean_std <- function(data) {
+    print("- extracting means and standard deviations")
+    
     column_names <- colnames(data)
     is_mean_or_std_dev_flag = grep("(mean|std)", column_names, ignore.case = TRUE)
     desired_columns = column_names[is_mean_or_std_dev_flag]
@@ -246,6 +252,7 @@ extract_mean_std <- function(data) {
 # return: Averages on original data by user, activity
 #
 average <- function(readings) {
+    print("Generating final output.")
     readings
 #    grouped <- group_by(readings, subject, activity_name)
 #    output <- summarize(grouped, )

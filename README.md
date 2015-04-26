@@ -1,7 +1,7 @@
 # tidy-data-project
 Course project for "Getting and Cleaning Data" (Coursera Data Science track)
 
-Prerequisite: have the data set in the working directory, or a subdirectory thereof.
+Prerequisite: have the data set in the working directory, or a subdirectory thereof. The data are included in this repository in the default location, for convenience.
 
 Steps:
 

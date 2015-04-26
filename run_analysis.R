@@ -15,7 +15,7 @@
 master <- function(subdirectory = "") {
     raw_data_set <- read_and_merge_raw_data(subdirectory)
     raw_data_set$data <- apply_labels(raw_data_set$data, raw_data_set$labels)
-    raw_data_set$data <- mix_in_subjects_and_activities(data_set$data, data_set$activity_ref)
+    raw_data_set$data <- mix_in_subjects_and_activities(raw_data_set$data, raw_data_set$activity_ref)
     
     final_data_set <- average(raw_data_set$data)
     final_data_set

@@ -258,10 +258,42 @@ mix_in_subjects_and_activities <- function(data, activity_ref) {
 #                    activity filled in
 # return: Averages on original data by user, activity
 #
-average <- function(readings) {
+average <- function(data) {
     print("Generating final output.")
-    readings
-#    grouped <- group_by(readings, subject, activity_name)
-#    output <- summarize(grouped, )
+    
+    readings <- data$readings
 
+    group_cols <- c("activity_name", "subject")
+    data_cols <- names(readings)[!names(readings) %in% group_cols]
+    
+    symbols <- lapply(group_cols, as.symbol)
+    
+    finaldf <- NULL
+    
+    for (col in data_cols) {
+        print(sprintf(" - adding columns '%s'", col))
+        tempdf <- data.frame(activity_name = readings$activity_name,
+                             subject = readings$subject)
+        coldf <- data.frame(value = readings[,col])
+        tempdf <- cbind(tempdf, coldf)
+        
+        head(coldf)
+
+        aves <- tempdf %>% group_by_(.dots = symbols) %>% summarize(value = mean(value))
+        names(aves)[3] = col
+        print(names(aves))
+        
+        # Keep user, activity from first set of averages
+        if (is.null(finaldf)) {
+            print("Using averages")
+            finaldf <- aves
+        } else {
+            print("merging aves")
+            aves <- aves[,!(names(aves) %in% group_cols)]
+            print(aves)
+            finaldf <- cbind(finaldf, aves)
+        }
+    }
+    
+    finaldf
 }

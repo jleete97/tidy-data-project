@@ -46,13 +46,14 @@ read_and_merge_raw_data <- function(subdirectory = "") {
     }
     
     # Read reference data in top-level directory
-    activity_ref = read.table(paste(path, "activity_labels.txt", sep = "/"), header = FALSE)
-    activity_ref = as.data.frame(activity_ref)
+    activity_ref <- read.table(paste(path, "activity_labels.txt", sep = "/"), header = FALSE)
+    activity_ref <- as.data.frame(activity_ref)
+    activity_ref$V2 <- as.character(activity_ref$V2)
     colnames(activity_ref) = c("activity_index", "activity_name")
-    labels = read.table(paste(path, "/features.txt", sep = "/"), header = FALSE)
-    labels = as.data.frame(labels)
+    
+    labels <- read.table(paste(path, "/features.txt", sep = "/"), header = FALSE)
+    labels <- as.data.frame(labels)
     labels$V2 <- as.character(labels$V2)
-    print(sprintf("labels has %d", length(labels$V2)))
     
     # Read measurement data from subdirectories (e.g., "test", "train")
     raw <- list()
@@ -215,18 +216,15 @@ apply_labels <- function(data, labels) {
 # return: New data frame with only columns of mean and standard deviation data [N x (some # < 561)]
 #
 extract_mean_std <- function(data) {
-    print("- extracting means and standard deviations")
+    print("- restricting to means and standard deviations")
     
-    column_names <- colnames(data)
+    readings <- data$readings
+    column_names <- colnames(readings)
     is_mean_or_std_dev_flag = grep("(mean|std)", column_names, ignore.case = TRUE)
     desired_columns = column_names[is_mean_or_std_dev_flag]
-    print("**************")
-    print(is_mean_or_std_dev_flag)
-    print("--------")
-    print(desired_columns)
-    print("++++++++++++")
     
-    data[, desired_columns]
+    data$readings <- readings[, desired_columns]
+    data
 }
 
 # Add columns for subject (1-30) and activity index (1-6) to data$readings

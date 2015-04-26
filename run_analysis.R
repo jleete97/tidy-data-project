@@ -64,14 +64,15 @@ read_and_merge_data <- function(directory = "") {
 #
 read_raw <- function(directory) {
     data_type <- last_element(directory)
-    subject_file <- "subject_" + data_type + ".txt"
-    reading_file <- "X_" + data_type + ".txt"
-    activity_file <- "y_" + data_type + ".txt"
-    inertial_signals <- read_inertial(directory + "/Inertial Signals", data_type)
+    subject_file <- paste(directory, "/", "subject_", data_type, ".txt", sep = "")
+    reading_file <- paste(directory, "/", "X_", data_type, ".txt", sep = "")
+    activity_file <- paste(directory, "/", "y_", data_type, ".txt", sep = "")
+    inertial_dir <- paste(directory, "/Inertial Signals", sep = "")
     
     raw <- list(readings = read.table(reading_file, header = FALSE),
                 subjects = read.table(subject_file, header = FALSE),
-                activities = read.table(activity_file, header = FALSE))
+                activities = read.table(activity_file, header = FALSE),
+                inertial_signals = read_inertial(inertial_dir, data_type))
     raw
 }
 

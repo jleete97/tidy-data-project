@@ -18,5 +18,7 @@ Steps:
 
       dataset <- master("data")
 
-The assigned variable will then have the tidy data set.
+The master() function scans the appropriate directory for reference files (features.txt and activity_labels.txt), then finds any subdirectories (test, train), building raw data sets from the contained files (including the Inertial Signals subdirectorty within).
+
+When the master() function returns, the assigned variable will then have the tidy data set.
 

@@ -12,10 +12,11 @@
 #                      of each variable for user and activity
 #
 master <- function(directory = "") {
-    data_set <- read_and_merge_data(directory)
-    data_set$data <- apply_labels(data_set$data, data_set$labels)
+    raw_data_set <- read_and_merge_data(directory)
+    raw_data_set$data <- apply_labels(data_set$data, data_set$labels)
     
-    data_set
+    final_data_set <- average(raw_data_set$data)
+    final_data_set
 }
 
 # Read and merge the test and training data from the specified directory. Scans
@@ -160,7 +161,11 @@ apply_labels <- function(data) {
 # return: New data frame with only columns of mean and standard deviation data
 #
 extract_mean_std <- function(data) {
-    column_names = colnames(data)
+    column_names <- colnames(data)
+    is_mean_or_std_dev_flag = grep("(mean|std)", column_names, ignore.case = TRUE)
+    desired_columns = column_names[is_mean_or_std_dev_flag]
+    
+    data[, desired_columns]
 }
 
 # Merge activity data and apply activity names to the main data frame

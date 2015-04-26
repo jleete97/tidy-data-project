@@ -14,6 +14,7 @@
 master <- function(directory = "") {
     raw_data_set <- read_and_merge_raw_data(directory)
     raw_data_set$data <- apply_labels(data_set$data, data_set$labels)
+    raw_data_set$data <- mix_in_subjects_and_activities(data_set$data)
     
     final_data_set <- average(raw_data_set$data)
     final_data_set
@@ -169,7 +170,7 @@ merge_raw <- function(raw_data) {
 
 # Apply labels to columns in main data set
 #
-# param:  readings - Main data set (list with $readings, $labels)
+# param:  data - Main data set (list with $readings, $labels)
 # return: nothing
 #
 apply_labels <- function(data) {
@@ -180,6 +181,25 @@ apply_labels <- function(data) {
     colnames(readings)[replace_col_name_flag] <- labels
     
     data$readings <- readings
+    data
+}
+
+# Add columns for subject (1-30) and activity index (1-6) to data$readings
+#
+# param:  data - Main data set (list with data frames $readings [N x 561],
+#                $subjects [N x 1], $activities [N x 1])
+# return: Same data set, but with subjects and activities merged into readings
+#
+mix_in_subjects_and_activities <- function(data) {
+    subjects <- as.data.frame(data$subjects)
+    colnames(subjects) <- c("subject")
+    
+    activities <- as.data.frame(data$activities)
+    colnames(activities) <- c("activity_index")
+    
+    readings <- cbind(data$readings, subjects, activities)
+    data$readings <- readings
+    
     data
 }
 

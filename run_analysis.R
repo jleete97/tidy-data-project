@@ -5,13 +5,13 @@
 
 # "Master control" function to run everything through.
 #
-# param:  directory - Directory to read data from, defaults to "data"
+# param:  directory - Directory to read data from, defaults to "" for working directory
 # return: A list with two elements:
 #         - data     : Original data set, cleaned up as specified
 #         - averages : Required "second, independent tidy data set" with averages
 #                      of each variable for user and activity
 #
-master <- function(directory = "data") {
+master <- function(directory = "") {
     data_set <- read_and_merge_data(directory)
     data_set$readings <- label(data_set$readings, directory, "features.txt")
 }
@@ -19,19 +19,54 @@ master <- function(directory = "data") {
 # Read and merge the test and training data from the specified directory. Scans
 # specified directory for subdirectories, grabs and merges data from each.
 #
-# param:  directory - The directory to read data from, default to "data"
+# param:  directory - The directory to read data from, default to "" for working directory
 # return: A list with the following elements, all data frames except the last:
 #         - activity_ref     : Activity indices and labels (e.g., 1 ; STANDING)
-#         - subjects         : Subject index for each record (1 col, 1-30)
-#         - readings         : Main data records (561 cols of numeric data)
-#         - activities       : Activity index for each record (1 col, 1-6)
-#         - inertial_signals : Merged data from inertial signal files, with extra
-#                              columns to indicate type (body/gyro/total) and axis (x, y, z)
 #         - labels           : A character vector with main data column labels, read from
 #                              features.txt (e.g., "tBodyAcc-mean()-x")
+#         - readings         : List with main data records (561 cols of numeric data),
+#                              activity index for each record (1 col, 1-6),
+#                              subject index for each record (1 col, 1-30),
+#                              merged data from inertial signal files [with extra
+#                              columns to indicate type (body/gyro/total) and axis (x, y, z)]
 #
-read_and_merge_data <- function(directory = "data") {
+read_and_merge_data <- function(directory = "") {
+    path <- getwd()
+    if (directory != "") { path <- path + "./" + directory }
     
+    # Read reference data in top-level directory
+    activity_ref = read_activity_ref(path + "/activity_label.txt")
+    labels = read_main_data_labels(path + "/features.txt")
+
+    
+    # Read measurement data from subdirectories (e.g., "test", "train")
+    raw <- list()
+    files <- list.files(path)
+
+    for (file in files) {
+        if (file.info(file)$isdir) {
+            raw[file] <- read_raw(file)
+        }
+    }
+    
+    # Build and return main container list
+    all_data <- list(activity_ref = activity_ref, subjects = subjects, readings = readings,
+                    activities = activities, inertial_signals = inertial_signals, labels = labels)
+    all_data
+}
+
+# Read activity reference data (activity index, name) from file
+#
+read_activity_ref <- function(filename) {
+    data <- read.table(filename)
+    data
+}
+
+# Read main data column labels from file
+#
+read_main_data_labels <- function(filename) {
+    data <- read.table(filename)
+    data
 }
 
 # Apply labels to columns in main data set

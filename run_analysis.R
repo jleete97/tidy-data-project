@@ -15,6 +15,7 @@
 master <- function(subdirectory = "") {
     raw_data_set <- read_and_merge_raw_data(subdirectory)
     raw_data_set$data <- apply_labels(raw_data_set$data, raw_data_set$labels)
+    raw_data_set$data <- extract_mean_std(raw_data_set$data)
     raw_data_set$data <- mix_in_subjects_and_activities(raw_data_set$data, raw_data_set$activity_ref)
     
     final_data_set <- average(raw_data_set$data)
@@ -50,6 +51,7 @@ read_and_merge_raw_data <- function(subdirectory = "") {
     colnames(activity_ref) = c("activity_index", "activity_name")
     labels = read.table(paste(path, "/features.txt", sep = "/"), header = FALSE)
     labels = as.data.frame(labels)
+    labels$V2 <- as.character(labels$V2)
     print(sprintf("labels has %d", length(labels$V2)))
     
     # Read measurement data from subdirectories (e.g., "test", "train")
@@ -200,13 +202,31 @@ apply_labels <- function(data, labels) {
     print("   - applying labels")
     readings <- data$readings
     
-    print(sprintf("labels has %d", length(labels$V2)))
     replace_col_name_flag = substr(names(readings), 1, 1) == "V"
-    print(str(replace_col_name_flag))
     colnames(readings)[replace_col_name_flag] <- labels$V2
-    
+
     data$readings <- readings
     data
+}
+
+# "Slim down" the "readings" data frame to contain only mean and standard deviation data
+#
+# param:  data - Data frame with numeric data, column names from features.txt [N x 561]
+# return: New data frame with only columns of mean and standard deviation data [N x (some # < 561)]
+#
+extract_mean_std <- function(data) {
+    print("- extracting means and standard deviations")
+    
+    column_names <- colnames(data)
+    is_mean_or_std_dev_flag = grep("(mean|std)", column_names, ignore.case = TRUE)
+    desired_columns = column_names[is_mean_or_std_dev_flag]
+    print("**************")
+    print(is_mean_or_std_dev_flag)
+    print("--------")
+    print(desired_columns)
+    print("++++++++++++")
+    
+    data[, desired_columns]
 }
 
 # Add columns for subject (1-30) and activity index (1-6) to data$readings
@@ -231,21 +251,6 @@ mix_in_subjects_and_activities <- function(data, activity_ref) {
     data$readings <- readings
     
     data
-}
-
-# "Slim down" the "readings" data frame to contain only mean and standard deviation data
-#
-# param:  data - Data frame with numeric data, column names from features.txt
-# return: New data frame with only columns of mean and standard deviation data
-#
-extract_mean_std <- function(data) {
-    print("- extracting means and standard deviations")
-    
-    column_names <- colnames(data)
-    is_mean_or_std_dev_flag = grep("(mean|std)", column_names, ignore.case = TRUE)
-    desired_columns = column_names[is_mean_or_std_dev_flag]
-    
-    data[, desired_columns]
 }
 
 # Extract averages from source data, by user and activity

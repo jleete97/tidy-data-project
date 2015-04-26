@@ -26,3 +26,5 @@ The master() function then builds the final data set from the clean raw data, ca
 
 When the master() function returns, the assigned variable will then have the tidy data set.
 
+Running this script requires the **dplyr** library.
+

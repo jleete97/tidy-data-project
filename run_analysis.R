@@ -246,6 +246,7 @@ mix_in_subjects_and_activities <- function(data, activity_ref) {
     
     readings <- cbind(data$readings, subjects, activities)
     readings <- merge(readings, activity_ref, by.x = "activity_index", by.y = "activity_index")
+    readings <- readings[,!(names(readings) == "activity_index")] # don't need it any more
     data$readings <- readings
     
     data

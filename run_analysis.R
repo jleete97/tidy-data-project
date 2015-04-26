@@ -12,7 +12,7 @@
 #                      of each variable for user and activity
 #
 master <- function(directory = "") {
-    raw_data_set <- read_and_merge_data(directory)
+    raw_data_set <- read_and_merge_raw_data(directory)
     raw_data_set$data <- apply_labels(data_set$data, data_set$labels)
     
     final_data_set <- average(raw_data_set$data)
@@ -27,7 +27,7 @@ master <- function(directory = "") {
 #         - activity_ref     : Activity indices and labels (e.g., 1 ; STANDING)
 #         - labels           : A character vector with main data column labels, read from
 #                              features.txt (e.g., "tBodyAcc-mean()-x")
-#         - data             : List with:
+#         - data             : List with merged values from all types (test, train):
 #                              readings - main data records (N x 561, numeric data),
 #                              subjects - subject index for each record (N x 1, values 1-30),
 #                              activities - activity index for each record (N x 1, values 1-6),
@@ -35,7 +35,7 @@ master <- function(directory = "") {
 #                                      columns to indicate source (body/total), type (acc/gyro)
 #                                      and axis (x, y, z)]
 #
-read_and_merge_data <- function(directory = "") {
+read_and_merge_raw_data <- function(directory = "") {
     path <- getwd()
     if (directory != "") { path <- paste(path, directory, sep = "/") }
     
@@ -54,10 +54,12 @@ read_and_merge_data <- function(directory = "") {
         }
     }
     
+    merged_raw <- merge_raw(raw)
+    
     # Build and return main container list
     all_data <- list(activity_ref = activity_ref,
                      labels = labels,
-                     data = raw)
+                     data = merged_raw)
     all_data
 }
 
@@ -137,6 +139,32 @@ last_element <- function(path) {
     elts <- strsplit(path, split = "/")
     last_elt <- elts[[1]][[length(elts[[1]])]]
     last_elt
+}
+
+# Merge raw sets of readings, subjects, activities, inertial signals into combined
+# data frames; return as list with same structure as original lists.
+#
+# param:  raw_data - List of lists of data. Main list keyed by type ("test", "train"),
+#                    each sublist has $readings, $subjects, $activities, $inertial_signals
+# return: All raw data merged into equivalent lists of concatenated data.
+merge_raw <- function(raw_data) {
+    readings <- NULL
+    subjects <- NULL
+    activities <- NULL
+    inertial_signals <- NULL
+    
+    for (data in raw_data) {
+        readings <- rbind(data$readings)
+        subjects <- rbind(data$subjects)
+        activities <- rbind(data$activities)
+        inertial_signals <- rbind(data$inertial_signals)
+    }
+    
+    merged <- list(readings = readings,
+                   subjects = subjects,
+                   activities = activities,
+                   inertial_signals = inertial_signals)
+    merged
 }
 
 # Apply labels to columns in main data set

@@ -50,6 +50,7 @@ read_and_merge_raw_data <- function(subdirectory = "") {
     colnames(activity_ref) = c("activity_index", "activity_name")
     labels = read.table(paste(path, "/features.txt", sep = "/"), header = FALSE)
     labels = as.data.frame(labels)
+    print(sprintf("labels has %d", length(labels$V2)))
     
     # Read measurement data from subdirectories (e.g., "test", "train")
     raw <- list()
@@ -199,8 +200,10 @@ apply_labels <- function(data, labels) {
     print("   - applying labels")
     readings <- data$readings
     
+    print(sprintf("labels has %d", length(labels)))
     replace_col_name_flag = substr(names(readings), 1, 1) == "V"
-    colnames(readings)[replace_col_name_flag] <- labels
+    print(str(replace_col_name_flag))
+    colnames(readings)[replace_col_name_flag] <- labels$V2
     
     data$readings <- readings
     data

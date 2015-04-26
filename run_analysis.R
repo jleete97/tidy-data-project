@@ -13,7 +13,7 @@
 #
 master <- function(directory = "") {
     data_set <- read_and_merge_data(directory)
-    data_set$readings <- label(data_set$readings, directory, "features.txt")
+    data_set$readings <- apply_labels(data_set$readings)
 }
 
 # Read and merge the test and training data from the specified directory. Scans
@@ -28,15 +28,16 @@ master <- function(directory = "") {
 #                              activity index for each record (1 col, 1-6),
 #                              subject index for each record (1 col, 1-30),
 #                              merged data from inertial signal files [with extra
-#                              columns to indicate type (body/gyro/total) and axis (x, y, z)]
+#                              columns to indicate source (body/total), type (acc/gyro)
+#                              and axis (x, y, z)]
 #
 read_and_merge_data <- function(directory = "") {
     path <- getwd()
     if (directory != "") { path <- path + "./" + directory }
     
     # Read reference data in top-level directory
-    activity_ref = read.table(path + "/activity_label.txt")
-    labels = read.table(path + "/features.txt")
+    activity_ref = read.table(path + "/activity_label.txt", header = FALSE)
+    labels = read.table(path + "/features.txt", header = FALSE)
 
     
     # Read measurement data from subdirectories (e.g., "test", "train")
@@ -55,13 +56,74 @@ read_and_merge_data <- function(directory = "") {
     all_data
 }
 
+# Read raw data from directory
+#
+# param:  directory - Name of the directory to extract data from
+# return: List with elements "readings" (data), "subjects" (subject indices 1-30),
+#         "activities" (activity indices, 1-6), and "inertial_signals"
+#
+read_raw <- function(directory) {
+    data_type <- last_element(directory)
+    subject_file <- "subject_" + data_type + ".txt"
+    reading_file <- "X_" + data_type + ".txt"
+    activity_file <- "y_" + data_type + ".txt"
+    inertial_signals <- read_inertial(directory + "/Inertial Signals", data_type)
+    
+    raw <- list(readings = read.table(reading_file, header = FALSE),
+                subjects = read.table(subject_file, header = FALSE),
+                activities = read.table(activity_file, header = FALSE))
+    raw
+}
+
+# Read inertial signals from directory
+#
+# param:  directory - Name of the directory to extract data from
+# return: Data frame with inertial data merged from all files, and three columns
+#         added: "source" (body/total), "type" (gyro/acc), and axis (x/y/z)
+#
+read_inertial <- function(directory, data_type) {
+    files <- list.files(directory)
+
+    # Initialize return data frame
+    all_data <- NULL
+
+    for (file in files) {
+        # Get data
+        data <- read.table(file, header = FALSE)
+        len <- length(data$V1)
+        
+        # Add labels to indicate source data file
+        file_no_ext <- sub("\\.txt", "", file)
+        elts <- strsplit(file_no_ext, split = "_")[[1]]
+        data_source <- rep(elts[[1]], len)
+        type <- rep(elts[[2]], len)
+        axis <- rep(elts[[3]], len)
+        data <- cbind(data, source = data_source)
+        data <- cbind(data, type = type)
+        data <- cbind(data, axis = axis)
+        
+        rbind(all_data, data)
+    }
+    
+    all_data
+}
+
+# Find the last path element of a directory path
+#
+# param:  path - Name of directory; e.g., "/my/directory/path/here"
+# return: Last element in path: e.g., "here"
+last_element <- function(path) {
+    elts <- strsplit(path, split = "/")
+    last_elt <- elts[[1]][[length(elts[[1]])]]
+    last_elt
+}
+
 # Apply labels to columns in main data set
 #
-# param:  readings - Main data set (a data frame with 561 columns of numeric data)
-# param:  labels   - Labels for columns in main data set (character vector)
-# return: Same data frame, with column names as specified in "labels" parameter
+# param:  readings - Main data set (list with all readings, labels)
+# return: Same data frame, with column names as specified in "readings/labels" element
 #
-label <- function(readings, labels) {
+apply_labels <- function(readings) {
     
 }
 

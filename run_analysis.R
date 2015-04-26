@@ -78,8 +78,8 @@ read_raw <- function(directory) {
 # Read inertial signals from directory
 #
 # param:  directory - Name of the directory to extract data from
-# return: Data frame with inertial data merged from all files, and three columns
-#         added: "source" (body/total), "type" (gyro/acc), and axis (x/y/z)
+# return: Data frame with inertial data merged from all files, and four columns
+#         added: "type" (test/train), "source" (body/total), "nature" (gyro/acc), and axis (x/y/z)
 #
 read_inertial <- function(directory, data_type) {
     files <- list.files(directory)
@@ -89,20 +89,27 @@ read_inertial <- function(directory, data_type) {
 
     for (file in files) {
         # Get data
-        data <- read.table(file, header = FALSE)
+        data <- read.table(paste(directory, "/", file, sep = ""), header = FALSE)
+        data <- as.data.frame(data)
         len <- length(data$V1)
         
         # Add labels to indicate source data file
         file_no_ext <- sub("\\.txt", "", file)
         elts <- strsplit(file_no_ext, split = "_")[[1]]
         data_source <- rep(elts[[1]], len)
-        type <- rep(elts[[2]], len)
+        nature <- rep(elts[[2]], len)
         axis <- rep(elts[[3]], len)
+        data <- cbind(data, type = rep(data_type, len))
         data <- cbind(data, source = data_source)
-        data <- cbind(data, type = type)
+        data <- cbind(data, nature = nature)
         data <- cbind(data, axis = axis)
         
-        rbind(all_data, data)
+        if (is.null(all_data)) {
+            all_data <- data
+        } else {
+            all_data <- rbind(all_data, data)
+            rm(data)
+        }
     }
     
     all_data

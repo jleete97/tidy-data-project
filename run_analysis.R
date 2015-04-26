@@ -35,8 +35,8 @@ read_and_merge_data <- function(directory = "") {
     if (directory != "") { path <- path + "./" + directory }
     
     # Read reference data in top-level directory
-    activity_ref = read_activity_ref(path + "/activity_label.txt")
-    labels = read_main_data_labels(path + "/features.txt")
+    activity_ref = read.table(path + "/activity_label.txt")
+    labels = read.table(path + "/features.txt")
 
     
     # Read measurement data from subdirectories (e.g., "test", "train")
@@ -53,20 +53,6 @@ read_and_merge_data <- function(directory = "") {
     all_data <- list(activity_ref = activity_ref, subjects = subjects, readings = readings,
                     activities = activities, inertial_signals = inertial_signals, labels = labels)
     all_data
-}
-
-# Read activity reference data (activity index, name) from file
-#
-read_activity_ref <- function(filename) {
-    data <- read.table(filename)
-    data
-}
-
-# Read main data column labels from file
-#
-read_main_data_labels <- function(filename) {
-    data <- read.table(filename)
-    data
 }
 
 # Apply labels to columns in main data set

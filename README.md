@@ -20,5 +20,9 @@ Steps:
 
 The master() function scans the appropriate directory for reference files (features.txt and activity_labels.txt), then finds any subdirectories (test, train), building raw data sets from the contained files (including the Inertial Signals subdirectorty within).
 
+Once the raw data are loaded and merged, the master() function labels the data appropriately, extracts the mean and standard deviation data from the main data set, and puts in activity names. This produces a clean, merged, legible data set with only the desired data.
+
+The master() function then builds the final data set from the clean raw data, calculating averages on the remaining values by user and activity.
+
 When the master() function returns, the assigned variable will then have the tidy data set.
 

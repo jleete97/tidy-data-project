@@ -13,7 +13,9 @@
 #
 master <- function(directory = "") {
     data_set <- read_and_merge_data(directory)
-    data_set$readings <- apply_labels(data_set$readings)
+    data_set$data <- apply_labels(data_set$data, data_set$labels)
+    
+    data_set
 }
 
 # Read and merge the test and training data from the specified directory. Scans
@@ -24,20 +26,21 @@ master <- function(directory = "") {
 #         - activity_ref     : Activity indices and labels (e.g., 1 ; STANDING)
 #         - labels           : A character vector with main data column labels, read from
 #                              features.txt (e.g., "tBodyAcc-mean()-x")
-#         - readings         : List with main data records (561 cols of numeric data),
-#                              activity index for each record (1 col, 1-6),
-#                              subject index for each record (1 col, 1-30),
-#                              merged data from inertial signal files [with extra
-#                              columns to indicate source (body/total), type (acc/gyro)
-#                              and axis (x, y, z)]
+#         - data             : List with:
+#                              readings - main data records (N x 561, numeric data),
+#                              subjects - subject index for each record (N x 1, values 1-30),
+#                              activities - activity index for each record (N x 1, values 1-6),
+#                              inertial_signals - merged data from inertial signal files [with extra
+#                                      columns to indicate source (body/total), type (acc/gyro)
+#                                      and axis (x, y, z)]
 #
 read_and_merge_data <- function(directory = "") {
     path <- getwd()
-    if (directory != "") { path <- path + "./" + directory }
+    if (directory != "") { path <- paste(path, directory, sep = "/") }
     
     # Read reference data in top-level directory
-    activity_ref = read.table(path + "/activity_label.txt", header = FALSE)
-    labels = read.table(path + "/features.txt", header = FALSE)
+    activity_ref = read.table(paste(path, "activity_label.txt", sep = "/"), header = FALSE)
+    labels = read.table(paste(path, "/features.txt", sep = "/"), header = FALSE)
 
     
     # Read measurement data from subdirectories (e.g., "test", "train")
@@ -51,16 +54,20 @@ read_and_merge_data <- function(directory = "") {
     }
     
     # Build and return main container list
-    all_data <- list(activity_ref = activity_ref, subjects = subjects, readings = readings,
-                    activities = activities, inertial_signals = inertial_signals, labels = labels)
+    all_data <- list(activity_ref = activity_ref,
+                     labels = labels,
+                     data = raw)
     all_data
 }
 
 # Read raw data from directory
 #
 # param:  directory - Name of the directory to extract data from
-# return: List with elements "readings" (data), "subjects" (subject indices 1-30),
-#         "activities" (activity indices, 1-6), and "inertial_signals"
+# return: List with elements:
+#             - readings (data)
+#             - subjects (subject indices 1-30),
+#             - activities (activity indices, 1-6)
+#             - inertial_signals [DF with cols: type, source, nature, axis, V1-V128]
 #
 read_raw <- function(directory) {
     data_type <- last_element(directory)
@@ -79,8 +86,10 @@ read_raw <- function(directory) {
 # Read inertial signals from directory
 #
 # param:  directory - Name of the directory to extract data from
-# return: Data frame with inertial data merged from all files, and four columns
-#         added: "type" (test/train), "source" (body/total), "nature" (gyro/acc), and axis (x/y/z)
+#         data_type - Type of data ("test", "train")
+# return: Data frame with inertial data merged from all files in directory, and four columns
+#         added: "type" (test/train), "source" (body/total), "nature" (gyro/acc), and axis
+#         (x/y/z) -- type from input parameter, others from file name ("body_acc_x_test.txt")
 #
 read_inertial <- function(directory, data_type) {
     files <- list.files(directory)
@@ -89,22 +98,25 @@ read_inertial <- function(directory, data_type) {
     all_data <- NULL
 
     for (file in files) {
-        # Get data
+        # Read data from file in directory
         data <- read.table(paste(directory, "/", file, sep = ""), header = FALSE)
         data <- as.data.frame(data)
-        len <- length(data$V1)
         
         # Add labels to indicate source data file
         file_no_ext <- sub("\\.txt", "", file)
         elts <- strsplit(file_no_ext, split = "_")[[1]]
+        len <- length(data$V1)
+        
         data_source <- rep(elts[[1]], len)
         nature <- rep(elts[[2]], len)
         axis <- rep(elts[[3]], len)
+        
         data <- cbind(data, type = rep(data_type, len))
         data <- cbind(data, source = data_source)
         data <- cbind(data, nature = nature)
         data <- cbind(data, axis = axis)
         
+        # Build up data frame
         if (is.null(all_data)) {
             all_data <- data
         } else {
@@ -128,20 +140,27 @@ last_element <- function(path) {
 
 # Apply labels to columns in main data set
 #
-# param:  readings - Main data set (list with all readings, labels)
-# return: Same data frame, with column names as specified in "readings/labels" element
+# param:  readings - Main data set (list with $readings, $labels)
+# return: nothing
 #
-apply_labels <- function(readings) {
+apply_labels <- function(data) {
+    readings <- data$readings
+    labels <- data$labels
     
+    replace_col_name_flag = substr(names(readings), 1, 1) == "V"
+    colnames(readings)[replace_col_name_flag] <- labels
+    
+    data$readings <- readings
+    data
 }
 
 # "Slim down" the "readings" data frame to contain only mean and standard deviation data
 #
-# param:  readings - Data frame with numeric data, column names from features.txt
+# param:  data - Data frame with numeric data, column names from features.txt
 # return: New data frame with only columns of mean and standard deviation data
 #
-extract_mean_std <- function(readings) {
-    
+extract_mean_std <- function(data) {
+    column_names = colnames(data)
 }
 
 # Merge activity data and apply activity names to the main data frame

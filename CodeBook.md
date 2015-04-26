@@ -14,3 +14,6 @@ The "data" section of the main data set holds the test and training readinds, wi
 - inertial_signals : a data frame containing the inertial signal data, with columns V1 to V128 for the initial data, and added columns "type" (train/test), "source" (body/total), nature (acc/gyro), and axis (x/y/z).
 
 The final output has averages of all variables, grouped by user and activity.
+
+The source data come from the UCI Machine Learning Repository at http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones. The included README.txt file has further information about the particulars of the activities measured, data normalization, etc.
+

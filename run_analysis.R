@@ -200,7 +200,7 @@ apply_labels <- function(data, labels) {
     print("   - applying labels")
     readings <- data$readings
     
-    print(sprintf("labels has %d", length(labels)))
+    print(sprintf("labels has %d", length(labels$V2)))
     replace_col_name_flag = substr(names(readings), 1, 1) == "V"
     print(str(replace_col_name_flag))
     colnames(readings)[replace_col_name_flag] <- labels$V2

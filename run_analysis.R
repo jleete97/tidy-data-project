@@ -45,7 +45,7 @@ read_and_merge_raw_data <- function(subdirectory = "") {
     }
     
     # Read reference data in top-level directory
-    activity_ref = read.table(paste(path, "activity_label.txt", sep = "/"), header = FALSE)
+    activity_ref = read.table(paste(path, "activity_labels.txt", sep = "/"), header = FALSE)
     activity_ref = as.data.frame(activity_ref)
     colnames(activity_ref) = c("activity_index", "activity_name")
     labels = read.table(paste(path, "/features.txt", sep = "/"), header = FALSE)
@@ -56,8 +56,12 @@ read_and_merge_raw_data <- function(subdirectory = "") {
     files <- list.files(path)
 
     for (file in files) {
+        print("Processing %s", file)
         if (file.info(file)$isdir) {
-            raw[file] <- read_raw(file)
+            print(sprintf("Reading data type '%s'", file))
+            new_raw <- read_raw(file)
+            print(sprintf("Merging '%s%' data into all raw", file))
+            raw <- list(raw, file = new_raw)
         }
     }
     
@@ -80,7 +84,9 @@ read_and_merge_raw_data <- function(subdirectory = "") {
 #             - inertial_signals [DF with cols: type, source, nature, axis, V1-V128]
 #
 read_raw <- function(directory) {
-    data_type <- last_element(directory)
+    data_type <- last_element(directory) # "test" or "train"
+    print(sprintf(" - reading raw data for '%s' in '%s'", data_type, directory))
+    
     subject_file <- paste(directory, "/", "subject_", data_type, ".txt", sep = "")
     reading_file <- paste(directory, "/", "X_", data_type, ".txt", sep = "")
     activity_file <- paste(directory, "/", "y_", data_type, ".txt", sep = "")
@@ -102,6 +108,7 @@ read_raw <- function(directory) {
 #         (x/y/z) -- type from input parameter, others from file name ("body_acc_x_test.txt")
 #
 read_inertial <- function(directory, data_type) {
+    print(sprintf(" - reading inertial data for '%s' in '%s'", data_type, directory))
     files <- list.files(directory)
 
     # Initialize return data frame
@@ -109,6 +116,8 @@ read_inertial <- function(directory, data_type) {
 
     for (file in files) {
         # Read data from file in directory
+        print(sprintf("   - reading inertial data from file '%s'", file))
+        
         data <- read.table(paste(directory, "/", file, sep = ""), header = FALSE)
         data <- as.data.frame(data)
         
@@ -135,6 +144,7 @@ read_inertial <- function(directory, data_type) {
         }
     }
     
+    print("     - read inertial data.")
     all_data
 }
 
@@ -157,12 +167,15 @@ last_element <- function(path) {
 # return: All raw data merged into equivalent lists of concatenated data.
 #
 merge_raw <- function(raw_data) {
+    print(" - merging raw data")
+    
     readings <- NULL
     subjects <- NULL
     activities <- NULL
     inertial_signals <- NULL
     
     for (data in raw_data) {
+        print(sprintf("   - merging in data type '%s'", data))
         readings <- rbind(data$readings)
         subjects <- rbind(data$subjects)
         activities <- rbind(data$activities)
@@ -181,9 +194,8 @@ merge_raw <- function(raw_data) {
 # param:  data - Main data set (list with $readings, $labels)
 # return: Same data frame, with labels in $readings set
 #
-apply_labels <- function(data) {
+apply_labels <- function(data, labels) {
     readings <- data$readings
-    labels <- data$labels
     
     replace_col_name_flag = substr(names(readings), 1, 1) == "V"
     colnames(readings)[replace_col_name_flag] <- labels
@@ -229,9 +241,13 @@ extract_mean_std <- function(data) {
 
 # Extract averages from source data, by user and activity
 #
-# param:  readings - Main data from
-# return: Original data with averages by user, activity
+# param:  readings - Merged readings from raw input, with subject (user) and
+#                    activity filled in
+# return: Averages on original data by user, activity
 #
-average <- function(data) {
-    
+average <- function(readings) {
+    readings
+#    grouped <- group_by(readings, subject, activity_name)
+#    output <- summarize(grouped, )
+
 }

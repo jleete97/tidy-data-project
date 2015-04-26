@@ -5,16 +5,17 @@
 
 # "Master control" function to run everything through.
 #
-# param:  directory - Directory to read data from, defaults to "" for working directory
+# param:  subdirectory - Subdirectory (within working directory) to read data from;
+#                        use "" for working directory
 # return: A list with two elements:
 #         - data     : Original data set, cleaned up as specified
 #         - averages : Required "second, independent tidy data set" with averages
 #                      of each variable for user and activity
 #
-master <- function(directory = "") {
-    raw_data_set <- read_and_merge_raw_data(directory)
+master <- function(subdirectory = "") {
+    raw_data_set <- read_and_merge_raw_data(subdirectory)
     raw_data_set$data <- apply_labels(data_set$data, data_set$labels)
-    raw_data_set$data <- mix_in_subjects_and_activities(data_set$data)
+    raw_data_set$data <- mix_in_subjects_and_activities(data_set$data, data_set$activity_ref)
     
     final_data_set <- average(raw_data_set$data)
     final_data_set
@@ -23,7 +24,8 @@ master <- function(directory = "") {
 # Read and merge the test and training data from the specified directory. Scans
 # specified directory for subdirectories, grabs and merges data from each.
 #
-# param:  directory - The directory to read data from, default to "" for working directory
+# param:  subdirectory - The subdirectory within the working directory to read data from; use
+#                        "" for working directory
 # return: A list with the following elements, all data frames except the last:
 #         - activity_ref     : Activity indices and labels (e.g., 1 ; STANDING)
 #         - labels           : A character vector with main data column labels, read from
@@ -36,14 +38,18 @@ master <- function(directory = "") {
 #                                      columns to indicate source (body/total), type (acc/gyro)
 #                                      and axis (x, y, z)]
 #
-read_and_merge_raw_data <- function(directory = "") {
+read_and_merge_raw_data <- function(subdirectory = "") {
     path <- getwd()
-    if (directory != "") { path <- paste(path, directory, sep = "/") }
+    if (!is.null(subdirectory) & subdirectory != "") {
+        path <- paste(path, subdirectory, sep = "/")
+    }
     
     # Read reference data in top-level directory
     activity_ref = read.table(paste(path, "activity_label.txt", sep = "/"), header = FALSE)
+    activity_ref = as.data.frame(activity_ref)
+    colnames(activity_ref) = c("activity_index", "activity_name")
     labels = read.table(paste(path, "/features.txt", sep = "/"), header = FALSE)
-
+    labels = as.data.frame(labels)
     
     # Read measurement data from subdirectories (e.g., "test", "train")
     raw <- list()
@@ -186,18 +192,23 @@ apply_labels <- function(data) {
 
 # Add columns for subject (1-30) and activity index (1-6) to data$readings
 #
-# param:  data - Main data set (list with data frames $readings [N x 561],
-#                $subjects [N x 1], $activities [N x 1])
+# param:  data -        Main data set (list with data frames $readings [N x 561],
+#                       $subjects [N x 1], $activities [N x 1])
+# param: activity_ref - Activity name/number cross-reference (e.g.,
+#                       1 - STANDING, 2 - WALKING, ...)
 # return: Same data set, but with subjects and activities merged into readings
 #
-mix_in_subjects_and_activities <- function(data) {
+mix_in_subjects_and_activities <- function(data, activity_ref) {
     subjects <- as.data.frame(data$subjects)
     colnames(subjects) <- c("subject")
     
     activities <- as.data.frame(data$activities)
     colnames(activities) <- c("activity_index")
     
+    colnames(activity)
+    
     readings <- cbind(data$readings, subjects, activities)
+    readings <- merge(readings, activity_ref, by.x = "activity_index", by.y = "activity_name")
     data$readings <- readings
     
     data
@@ -214,16 +225,6 @@ extract_mean_std <- function(data) {
     desired_columns = column_names[is_mean_or_std_dev_flag]
     
     data[, desired_columns]
-}
-
-# Merge activity data and apply activity names to the main data frame
-#
-# param:  readings - Main data frame
-# return: Original data frame, with columns added for activity index (1-6) and
-#         activity name (e.g,. "STANDING")
-#
-apply_activity_names <- function(data) {
-    
 }
 
 # Extract averages from source data, by user and activity

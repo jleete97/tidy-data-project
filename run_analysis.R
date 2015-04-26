@@ -142,6 +142,7 @@ read_inertial <- function(directory, data_type) {
 #
 # param:  path - Name of directory; e.g., "/my/directory/path/here"
 # return: Last element in path: e.g., "here"
+#
 last_element <- function(path) {
     elts <- strsplit(path, split = "/")
     last_elt <- elts[[1]][[length(elts[[1]])]]
@@ -154,6 +155,7 @@ last_element <- function(path) {
 # param:  raw_data - List of lists of data. Main list keyed by type ("test", "train"),
 #                    each sublist has $readings, $subjects, $activities, $inertial_signals
 # return: All raw data merged into equivalent lists of concatenated data.
+#
 merge_raw <- function(raw_data) {
     readings <- NULL
     subjects <- NULL
@@ -177,7 +179,7 @@ merge_raw <- function(raw_data) {
 # Apply labels to columns in main data set
 #
 # param:  data - Main data set (list with $readings, $labels)
-# return: nothing
+# return: Same data frame, with labels in $readings set
 #
 apply_labels <- function(data) {
     readings <- data$readings
@@ -192,7 +194,7 @@ apply_labels <- function(data) {
 
 # Add columns for subject (1-30) and activity index (1-6) to data$readings
 #
-# param:  data -        Main data set (list with data frames $readings [N x 561],
+# param: data -         Main data set (list with data frames $readings [N x 561],
 #                       $subjects [N x 1], $activities [N x 1])
 # param: activity_ref - Activity name/number cross-reference (e.g.,
 #                       1 - STANDING, 2 - WALKING, ...)
@@ -202,13 +204,11 @@ mix_in_subjects_and_activities <- function(data, activity_ref) {
     subjects <- as.data.frame(data$subjects)
     colnames(subjects) <- c("subject")
     
-    activities <- as.data.frame(data$activities)
+    activities <- data$activities
     colnames(activities) <- c("activity_index")
     
-    colnames(activity)
-    
     readings <- cbind(data$readings, subjects, activities)
-    readings <- merge(readings, activity_ref, by.x = "activity_index", by.y = "activity_name")
+    readings <- merge(readings, activity_ref, by.x = "activity_index", by.y = "activity_index")
     data$readings <- readings
     
     data
